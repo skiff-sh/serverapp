@@ -69,21 +69,23 @@ func MetricsClientInterceptors(reg prometheus.Registerer) (grpc.UnaryClientInter
 
 // WaitUntilReady waits until the gRPC service is ready by calling IsReady.
 // This should be used with a timeout via context.WithTimeout.
-func WaitUntilReady(ctx context.Context, addr string) error {
+func WaitUntilReady(ctx context.Context, addr string, to time.Duration) error {
+	topCtx, cancel := context.WithTimeout(ctx, to)
+	defer cancel()
 	ticker := time.NewTicker(1 * time.Second)
 	var err error
 	var done bool
 
 	for !done {
 		done, err = func() (bool, error) {
-			toCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			toCtx, cancel := context.WithTimeout(topCtx, 1*time.Second)
 			defer cancel()
 			if IsReady(toCtx, addr) {
 				return true, nil
 			}
 			select {
-			case <-ctx.Done():
-				return false, context.Cause(ctx)
+			case <-topCtx.Done():
+				return false, context.Cause(topCtx)
 			case <-ticker.C:
 			}
 			return false, nil

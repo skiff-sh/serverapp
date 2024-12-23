@@ -38,9 +38,7 @@ func (i *InterceptorTestSuite) TestInterceptors() {
 		err := s.Serve(list)
 		i.NoError(err)
 	}()
-	dialCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	err := WaitUntilReady(dialCtx, list.Addr().String())
+	err := WaitUntilReady(ctx, list.Addr().String(), 5*time.Second)
 	if err != nil {
 		i.FailNow(err.Error())
 	}
